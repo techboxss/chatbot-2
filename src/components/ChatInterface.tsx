@@ -716,10 +716,18 @@ export const ChatInterface: React.FC<{
     <ErrorBoundary>
       <div className="flex h-screen bg-slate-50 flex-col font-sans overflow-hidden">
       {/* Top Header */}
-      <header className="h-16 bg-slate-900 flex items-center justify-between px-8 shrink-0 shadow-lg z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center font-bold text-white">L</div>
-          <span className="text-white font-semibold text-lg tracking-tight">LegalEase <span className="text-slate-400 font-light italic text-sm ml-1">AI Concierge</span></span>
+      <header className="h-16 bg-glass-dark flex items-center justify-between px-8 shrink-0 z-20 backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <Shield className="text-white" size={20} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-white font-bold text-lg leading-tight tracking-tight">LegalEase <span className="text-blue-400 font-medium">Concierge</span></span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">End-to-End Encrypted</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
@@ -1512,9 +1520,9 @@ export const ChatInterface: React.FC<{
                     <button 
                       disabled={isLoading || !input.trim() || input.length > 1000}
                       onClick={handleSend}
-                      className="px-6 md:px-8 bg-slate-900 text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 md:px-10 bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-slate-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Send
+                      {isLoading ? <Loader2 size={18} className="animate-spin" /> : <>Send <Send size={14} /></>}
                     </button>
                   </div>
                 </div>
