@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "Information about a potential client captured via the intake form.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the lead" },
+        "email": { "type": "string", "format": "email", "description": "Business email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "company": { "type": "string", "description": "Company name" },
+        "leadScore": { "type": "string", "enum": ["COLD", "WARM", "HOT"], "description": "AI-assigned qualification score" },
+        "consent": { "type": "boolean", "description": "Whether the user accepted the privacy notice" },
+        "capturedAt": { "type": "string", "format": "date-time", "description": "Timestamp of lead capture" }
+      },
+      "required": ["name", "email", "phone", "consent"]
+    },
+    "ChatSession": {
+      "title": "Chat Session",
+      "description": "Historical record of a chat interaction.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "description": "Reference to the Lead document" },
+        "messages": { "type": "array", "description": "Array of message objects" },
+        "summary": { "type": "string", "description": "AI-generated summary of the conversation" },
+        "status": { "type": "string", "enum": ["active", "completed", "spam"], "description": "Current status of the session" },
+        "pageContext": { "type": "string", "description": "The URL or section where the user initiated chat" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Session start time" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last message time" }
+      },
+      "required": ["createdAt", "status"]
+    },
+    "Consultation": {
+      "title": "Consultation",
+      "description": "A scheduled meeting request.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "description": "Reference to the Lead document" },
+        "chatSessionId": { "type": "string", "description": "Reference to the ChatSession" },
+        "date": { "type": "string", "description": "Requested meeting date" },
+        "time": { "type": "string", "description": "Requested meeting time" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"], "description": "Current status" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["leadId", "date", "time"]
+    },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Aggregated metrics for the dashboard.",
+      "type": "object",
+      "properties": {
+        "metric": { "type": "string", "description": "Name of the metric (e.g., chats_started)" },
+        "value": { "type": "integer", "description": "Count" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["metric", "value"]
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "Basic information for the authenticated user.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the user" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "role": { 
+          "type": "string", 
+          "enum": ["ADMIN", "ATTORNEY", "SUPPORT"], 
+          "description": "User's access level within the platform" 
+        },
+        "company": { "type": "string", "description": "Company name" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "ServiceRequest": {
+      "title": "Service Request",
+      "description": "Record of a client expressing interest in a specific legal service.",
+      "type": "object",
+      "properties": {
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "leadId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "leadName": { "type": "string" },
+        "leadEmail": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["serviceId", "serviceName", "leadId", "timestamp"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Internal task for firm staff.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "DONE"] },
+        "assignedTo": { "type": "string", "description": "User ID of the assigned staff" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "priority", "status", "createdBy"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "User contact detailed captured during intake."
+    },
+    "/sessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "Conversation logs and summaries."
+    },
+    "/consultations/{consultationId}": {
+      "schema": "Consultation",
+      "description": "Meeting requests."
+    },
+    "/analytics/{metricId}": {
+      "schema": "Analytics",
+      "description": "Global counters for reporting."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Authenticated user profile data."
+    },
+    "/service_requests/{requestId}": {
+      "schema": "ServiceRequest",
+      "description": "Logs of when users request specific legal services."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Internal firm task management."
+    }
+  }
+}

@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Role-based Access Helpers
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function hasRole(role) {
+      return isSignedIn() && getUserData().role == role;
+    }
+    function isAdmin() { return hasRole('ADMIN'); }
+    function isAttorney() { return hasRole('ATTORNEY'); }
+    function isSupport() { return hasRole('SUPPORT'); }
+    function isStaff() { return isSignedIn() && getUserData().role in ['ADMIN', 'ATTORNEY', 'SUPPORT']; }
+
+    // Validation Helpers
+    function isValidLead(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.phone is string && data.phone.size() >= 10 &&
+             data.consent == true &&
+             data.capturedAt == request.time;
+    }
+
+    function isValidChatSession(data) {
+      return data.createdAt == request.time &&
+             data.status in ['active', 'completed', 'spam'] &&
+             (!('messages' in data) || data.messages is list);
+    }
+
+    function isValidConsultation(data) {
+      return data.leadId is string &&
+             data.date is string &&
+             data.time is string &&
+             data.status == 'pending' &&
+             data.createdAt == request.time;
+    }
+
+    function isValidServiceRequest(data) {
+      return data.serviceId is string &&
+             data.serviceName is string &&
+             data.leadId is string &&
+             data.timestamp == request.time;
+    }
+
+    function isValidTask(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.priority in ['LOW', 'MEDIUM', 'HIGH'] &&
+             data.status in ['TODO', 'IN_PROGRESS', 'DONE'] &&
+             data.createdBy is string &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             (!('assignedTo' in data) || data.assignedTo is string) &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    function isValidUser(data) {
+      return data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.email is string && data.email.matches('^[^@]+@[^@]+\\.[^@]+$') &&
+             data.role in ['ADMIN', 'ATTORNEY', 'SUPPORT'] &&
+             (!('company' in data) || (data.company is string && data.company.size() <= 100)) &&
+             data.updatedAt == request.time;
+    }
+
+    // Leads
+    match /leads/{leadId} {
+      allow create: if isValidLead(incoming());
+      allow read: if isStaff();
+      allow update: if isAdmin() || isAttorney();
+      allow delete: if isAdmin();
+    }
+
+    // Sessions
+    match /sessions/{sessionId} {
+      allow create: if isValidChatSession(incoming());
+      allow update: if (
+        (isStaff()) || // Staff can update session status/summary
+        (incoming().diff(existing()).affectedKeys().hasOnly(['messages', 'summary', 'status', 'updatedAt']) &&
+         incoming().updatedAt == request.time)
+      );
+      allow read: if isStaff();
+    }
+
+    // Consultations
+    match /consultations/{consultationId} {
+      allow create: if isValidConsultation(incoming());
+      allow read: if isStaff();
+      allow update: if isAdmin() || isAttorney();
+      allow delete: if isAdmin();
+    }
+
+    // Service Requests
+    match /service_requests/{requestId} {
+      allow create: if isValidServiceRequest(incoming());
+      allow read: if isStaff();
+      allow update, delete: if isAdmin();
+    }
+
+    // Analytics
+    match /analytics/{metricId} {
+      allow read: if isStaff(); 
+      allow write: if (
+        incoming().metric is string && 
+        incoming().value is int &&
+        (isStaff() || (existing() == null || incoming().value == existing().value + 1))
+      );
+    }
+    
+    // User Profiles
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && incoming().role == existing().role && isValidUser(incoming())) ||
+        (isAdmin() && isValidUser(incoming()))
+      );
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && isValidTask(incoming());
+      allow update: if isStaff() && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'priority', 'assignedTo', 'updatedAt', 'title', 'description']) &&
+         incoming().updatedAt == request.time) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}

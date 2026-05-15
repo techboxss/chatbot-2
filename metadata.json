@@ -1,0 +1,10 @@
+{
+  "name": "LegalEase AI Concierge",
+  "description": "Intelligent AI assistant and intake specialist for LegalEase Solutions, providing expert-led AI legal service guidance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "AI-powered legal service intake",
+    "Service matching & qualification",
+    "Automated handoff protocols"
+  ]
+}
